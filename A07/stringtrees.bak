@@ -1,0 +1,149 @@
+;; The first three lines of this file were inserted by DrRacket. They record metadata
+;; about the language level of this file in a form that our tools can easily process.
+#reader(lib "htdp-intermediate-lambda-reader.ss" "lang")((modname stringtrees) (read-case-sensitive #t) (teachpacks ()) (htdp-settings #(#t constructor repeating-decimal #f #t none #f () #t)))
+;;
+;; *****************************************
+;; Lucas Chen (20761547)
+;; CS 135 Fall 2018
+;; Assignment 07, Question 3
+;; *****************************************
+;;
+
+;; ==== Question 3a ========================
+
+;; A StringTree is a (list Str (listof StringTree))
+
+(define celebs '("Punk"
+                 (("Tokido" ())
+                  ("Marn" (("JWong" ()) ("Ricki" ()) ("KBrad" ())))
+                  ("Smug" (("Fuudo" ())
+                           ("Mena" (("Caba" ())
+                                    ("NuckleDu" ())))
+                           ("SnakeEyez" ()))))))
+
+(define big-example-tree '("Emily"
+                           (("Sean" (("Zayn" (("Paul" (("Gary" ())))))))
+                            ("Jude" (("Rita" ())) (("Mary" ())))
+                            ("Paul" (("Marilyn" ())
+                                     ("Toby" (("Danica" ())
+                                              ("Bruce" ())
+                                              ("Mark" ())
+                                              ("Bill" ())
+                                              ("Russell" ()))))
+                                    ("Emma" ())))))
+
+(define small-example-tree
+  '("Lucas" (("Kevin" (("Yolanda" (("Pedram" ()))))))))
+
+
+;; ==== Question 3b ========================
+
+;; A StringTree is a (list Str (listof StringTree))
+
+;; stringtree-template: StringTree -> Any
+;(define (stringtree-template stringtree)
+;  (cond [(empty? (second stringtree)) ...]
+;        [else
+;         (... (first stringtree) ...
+;              (list-of-stringtree-template (second stringtree)) ...)]))
+
+;; listof-stringtree-template: (listof Stringtree) -> Any
+;(define (list-of-stringtree-template los)
+;  (cond [(empty? los) ...]
+;        [else
+;         (... (stringtree-template (first los)) ...
+;              (list-of-stringtree-template (rest los)) ...)]))
+
+
+;; ==== Question 3c ========================
+
+;; (list-of-stringtree-insert name insertion-path los) inserts name into los
+;;   according to the path indicated by insertion-path
+;; list-of-stringtree-insert: Str (listof Nat) (listof StringTree) ->
+;;                            (listof StringTree)
+;; Examples:
+(check-expect (list-of-stringtree-insert "Daigo" (list 0) (second celebs))
+              '(("Daigo" ())
+                ("Tokido" ())
+                ("Marn" (("JWong" ()) ("Ricki" ()) ("KBrad" ())))
+                ("Smug" (("Fuudo" ())
+                         ("Mena" (("Caba" ())
+                                  ("NuckleDu" ())))
+                         ("SnakeEyez" ())))))
+
+(define (list-of-stringtree-insert name insertion-path los)
+  (cond [(empty? insertion-path)
+         (error "Invalid insert")]
+        [(and (empty? los) (= 0 (first insertion-path))
+              (empty? (rest insertion-path)))
+         (list (list name empty))]
+        [(empty? los)
+         (error "Invalid insert")]
+        [(and (= (first insertion-path) 0) (empty? (rest insertion-path)))
+         (cons (list name empty) los)]
+        [(= (first insertion-path) 0)
+         (cons (stringtree-insert name (rest insertion-path) (first los)) (rest los))]
+        [else
+         (cons (first los)
+               (list-of-stringtree-insert name (cons (sub1 (first insertion-path))
+                                              (rest insertion-path)) (rest los)))]))
+
+;; (stringtree-insert name insertion-path stringtree) inserts name into
+;;   stringtree according to the path indicated by insertion-path
+;; stringtree-insert: Str (listof Nat) StringTree -> StringTree
+;; Examples:
+(check-expect (stringtree-insert "Daigo" (list 0) celebs)
+              '("Punk"
+                (("Daigo" ())
+                 ("Tokido" ())
+                 ("Marn" (("JWong" ()) ("Ricki" ()) ("KBrad" ())))
+                 ("Smug" (("Fuudo" ())
+                          ("Mena" (("Caba" ())
+                                   ("NuckleDu" ())))
+                          ("SnakeEyez" ()))))))
+
+(define (stringtree-insert name insertion-path stringtree)
+  (list (first stringtree)
+        (list-of-stringtree-insert name insertion-path (second stringtree))))
+
+;; Tests:
+(check-error (stringtree-insert "Lucas" empty (list "Lucas" empty))
+             "Invalid insert")
+(check-expect (stringtree-insert "Lucas" (list 0) (list "Lucas" empty))
+              (list "Lucas" (list (list "Lucas" empty))))
+(check-error (stringtree-insert "Lucas" (list 1) (list "Lucas" empty))
+             "Invalid insert")
+(check-expect (stringtree-insert "Daigo" (list 2 1 1) celebs)
+              '("Punk"
+                (("Tokido" ())
+                 ("Marn" (("JWong" ()) ("Ricki" ()) ("KBrad" ())))
+                 ("Smug" (("Fuudo" ())
+                          ("Mena" (("Caba" ())
+                                   ("Daigo" ())
+                                   ("NuckleDu" ())))
+                          ("SnakeEyez" ()))))))
+(check-expect (stringtree-insert "Daigo" (list 3) celebs)
+              '("Punk"
+                (("Tokido" ())
+                 ("Marn" (("JWong" ()) ("Ricki" ()) ("KBrad" ())))
+                 ("Smug" (("Fuudo" ())
+                          ("Mena" (("Caba" ())
+                                   ("NuckleDu" ())))
+                          ("SnakeEyez" ())))
+                 ("Daigo" ()))))
+(check-expect (stringtree-insert "Daigo" (list 2 1 1 0) celebs)
+              '("Punk"
+                (("Tokido" ())
+                 ("Marn" (("JWong" ()) ("Ricki" ()) ("KBrad" ())))
+                 ("Smug" (("Fuudo" ())
+                          ("Mena" (("Caba" ())
+                                   ("NuckleDu" (("Daigo" ())))))
+                          ("SnakeEyez" ()))))))
+(check-error (stringtree-insert "Daigo" (list 2 5 1) celebs)
+             "Invalid insert")
+(check-error (stringtree-insert "Daigo" (list 2 5) celebs)
+             "Invalid insert")
+(check-error (stringtree-insert "Daigo" empty celebs)
+             "Invalid insert")
+(check-error (stringtree-insert "Daigo" (list 2 1 1 0 0) celebs)
+             "Invalid insert")
